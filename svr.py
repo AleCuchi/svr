@@ -1,10 +1,7 @@
-import quandl
-import math
-import numpy as np
-from sklearn import preprocessing, cross_validation, svm
 import math
 
 import numpy as np
+import pandas as pd
 import quandl
 from sklearn import preprocessing, cross_validation, svm
 
@@ -16,12 +13,12 @@ class DataGet():
         self.forecast_col = {}
         self.X = self.y = self.x_train = self.y_train = self.x_test = self.y_test = {}
 
-    def get_data(self, arr_company, start_date='1900-01-01', end_date='1900-01-01'):
+    def get_data(self, arr_company, start_date='2016-01-01', end_date='2016-31-12'):
         # Pegando informação do site
         for i in arr_company:
             self.arr_df[arr_company] = quandl.get(i, start_date=start_date, end_date=end_date)
 
-    def formular_data(self):
+    def calcula_percentual(self, col1, col2):
 
         self.arr_df["WIKI/GOOGL"]["HL_PRC"] = (self.arr_df["WIKI/GOOGL"]["Adj. High"] -
                                                self.arr_df["WIKI/GOOGL"]["Adj. Close"]) / \
@@ -35,10 +32,6 @@ class DataGet():
     PArametro Array no formato [[Codigo_compania1,[campo1,campo2...]],
                                 [Codigo_compania2,[campo1,campo2...]]
     '''
-
-    def select_data(self, arr_campos):
-        for i in arr_campos:
-            self.arr_df[i[0]] = self.arr_df[i[0]][[j for j in i[1]]]
 
     def set_data_config(self, arr_campos):
         self.forecast_col = "Adj. Close"
@@ -61,15 +54,44 @@ class DataGet():
                 cross_validation.train_test_split(self.X[_], self.y[_], test_size=0.2)
 
 
-df = DataGet(["WIKI/GOOGL", "FED/PC073164013_Q"])
-clf = svm.SVR()
-clf.fit(df.x_train, df.y_train)
-prediction = clf.predict(df.x_test[-4:])
-accuracy = clf.score(df.x_test[-4:], df.y_test[-4:])
+df_google = quandl.get("WIKI/GOOGL")
+df_dolar = quandl.get("FED/PC073164013_Q")
+df_treino = pd.concat([df_google, df_dolar])
 
+df_google = None
+df_dolar = None
+
+df_treino = df_treino[["Adj. Open", "Adj. High", "Adj. Low", "Adj. Close", "Adj. Volume", "Value"]]
+
+df_treino["Perc_High"] = (df_treino["Adj. High"] - df_treino["Adj. Close"]) / df_treino["Adj. Close"] * 100
+df_treino["Pert_Low"] = (df_treino["Adj. Low"] - df_treino["Adj. Close"]) / df_treino["Adj. Close"] * 100
+df_treino["Perc_Varia"] = (df_treino["Adj. Open"] - df_treino["Adj. Close"]) / df_treino["Adj. Close"]
+df_treino["Vlm_metrica"] = df_treino["Value"] / df_treino["Perc_Varia"]
+
+df_treino = df_treino[["Adj. Open", "Adj. High", "Adj. Low", "Value", "Adj. Volume", "Adj. Close",
+                       "Perc_High", "Pert_Low", "Perc_Varia", "Vlm_metrica"]]
+
+forecast_col = "Adj. Close"
+forecast_out = int(math.ceil(0.01 * len(df_treino)))
+df_treino["label"] = df_treino[forecast_col].shift(-forecast_out)
+
+df_treino.fillna(-99999, inplace=True)
+df_treino.dropna(inplace=True)
+
+X = np.array(df_treino.drop(["label"], 1))
+y = np.array(df_treino["label"])
+X = preprocessing.scale(X)
+y = np.array(df_treino["label"])
+
+Valor_treino, Valor_teste, Resposta_treino, Resposta_teste = cross_validation.train_test_split(X, y, test_size=0.2)
+
+clf = svm.SVR(kernel="linear")
+clf.fit(Valor_treino, Resposta_treino)
+# prediction = clf.predict(Valor_teste)
+accuracy = clf.score(Valor_teste, Resposta_teste)
+
+# print(prediction)
 print(accuracy)
-print(df.x_test[""])
-print(prediction)
 # print(x_test)
 # WIKI/AMZN   - Amazon
 # WIKI/AAPL   - Apple
