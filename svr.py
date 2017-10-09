@@ -1,9 +1,10 @@
 import math
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import quandl
-from sklearn import preprocessing, cross_validation, svm
+from sklearn import preprocessing, cross_validation, svm, neural_network
 
 
 class DataGet():
@@ -54,44 +55,55 @@ class DataGet():
                 cross_validation.train_test_split(self.X[_], self.y[_], test_size=0.2)
 
 
-df_google = quandl.get("WIKI/GOOGL")
-df_dolar = quandl.get("FED/PC073164013_Q")
-df_treino = pd.concat([df_google, df_dolar])
+# df_google = quandl.get("WIKI/GOOGL",start_date='2016-01-01',end_date='2017-01-01')
 
-df_google = None
-df_dolar = None
+df_google = pd.DataFrame(np.load("/home/alexandre/Documents/file.npy"))
 
-df_treino = df_treino[["Adj. Open", "Adj. High", "Adj. Low", "Adj. Close", "Adj. Volume", "Value"]]
+df_google = df_google[["Adj. Open", "Adj. High", "Adj. Low", "Adj. Close", "Adj. Volume"]]
 
-df_treino["Perc_High"] = (df_treino["Adj. High"] - df_treino["Adj. Close"]) / df_treino["Adj. Close"] * 100
-df_treino["Pert_Low"] = (df_treino["Adj. Low"] - df_treino["Adj. Close"]) / df_treino["Adj. Close"] * 100
-df_treino["Perc_Varia"] = (df_treino["Adj. Open"] - df_treino["Adj. Close"]) / df_treino["Adj. Close"]
-df_treino["Vlm_metrica"] = df_treino["Value"] / df_treino["Perc_Varia"]
+df_google["Perc_High"] = (df_google["Adj. High"] - df_google["Adj. Close"]) / df_google["Adj. Close"] * 100
+df_google["Pert_Low"] = (df_google["Adj. Close"] - df_google["Adj. Open"]) / df_google["Adj. Open"] * 100
+df_google["media_10"] = df_google["Adj. Close"].rolling(window=10).mean()
+df_google.drop(df_google.index[range(10)])
 
-df_treino = df_treino[["Adj. Open", "Adj. High", "Adj. Low", "Value", "Adj. Volume", "Adj. Close",
-                       "Perc_High", "Pert_Low", "Perc_Varia", "Vlm_metrica"]]
+df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume"]]
 
 forecast_col = "Adj. Close"
-forecast_out = int(math.ceil(0.01 * len(df_treino)))
-df_treino["label"] = df_treino[forecast_col].shift(-forecast_out)
+forecast_out = int(math.ceil(0.0001 * len(df_google)))
+df_google["label"] = df_google[forecast_col].shift(-forecast_out)
 
-df_treino.fillna(-99999, inplace=True)
-df_treino.dropna(inplace=True)
+df_google.fillna(-99999, inplace=True)
+df_google.dropna(inplace=True)
 
-X = np.array(df_treino.drop(["label"], 1))
-y = np.array(df_treino["label"])
+X = np.array(df_google.drop(["label"], 1))
+y = np.array(df_google["label"])
 X = preprocessing.scale(X)
-y = np.array(df_treino["label"])
+y = np.array(df_google["label"])
 
 Valor_treino, Valor_teste, Resposta_treino, Resposta_teste = cross_validation.train_test_split(X, y, test_size=0.2)
 
-clf = svm.SVR(kernel="linear")
-clf.fit(Valor_treino, Resposta_treino)
+clf_svr = svm.SVR(kernel="linear")
+clf_neuralnet = neural_network.MLPRegressor()
+clf_svr.fit(Valor_treino, Resposta_treino)
+clf_neuralnet.fit(Valor_treino, Resposta_treino)
 # prediction = clf.predict(Valor_teste)
-accuracy = clf.score(Valor_teste, Resposta_teste)
+accuracySVM = clf_svr.predict(Valor_teste)
+# accuracyNN = clf_neuralnet.predict(Valor_teste)
+
+
+# grafico = pd.DataFrame(accuracySVM).tail(60)
+# grafico.cumsum()
+# plt.figure(); grafico.plot(); plt.legend(loc="best")
+valor_grafico = 300
+plt.plot(range(len(accuracySVM[:valor_grafico])), accuracySVM[:valor_grafico], '',
+         range(len(Resposta_teste[:valor_grafico])), Resposta_teste[:valor_grafico], '')
+plt.show()
+
+print("mostro")
 
 # print(prediction)
-print(accuracy)
+
+
 # print(x_test)
 # WIKI/AMZN   - Amazon
 # WIKI/AAPL   - Apple
@@ -100,4 +112,5 @@ print(accuracy)
 # WIKI/CBS    - CBS
 # WIKI/F      - Ford
 # WIKI/FB     -Facebook
-#WIKI/MCD    - Mc Donalds
+# WIKI/MCD     - Mc Donalds
+#WIKI/AVP     - Avon
