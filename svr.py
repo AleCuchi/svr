@@ -91,6 +91,7 @@ accuracySVM = clf_svr.predict(Valor_teste)
 # accuracyNN = clf_neuralnet.predict(Valor_teste)
 
 
+
 # grafico = pd.DataFrame(accuracySVM).tail(60)
 # grafico.cumsum()
 # plt.figure(); grafico.plot(); plt.legend(loc="best")
