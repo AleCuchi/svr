@@ -44,6 +44,7 @@ Valor_treino, Valor_teste, Resposta_treino, Resposta_teste = cross_validation.tr
 clf_svr = svm.SVR(kernel="linear")
 clf_svr.fit(Valor_treino, Resposta_treino)
 
+
 # print(clf_neuralnet.score(, np.array([1007.87])))
 accuracySVM = clf_svr.score(Valor_teste[-forecast_out:], Resposta_teste[-forecast_out:])
 predict = clf_svr.predict(Valor_teste[-forecast_out:])
@@ -54,10 +55,7 @@ forecast_out = 40
 plt.plot([i for i in range(forecast_out)], predict[-forecast_out:], 'red',
          [j for j in range(forecast_out)], Resposta_teste[-forecast_out:], 'blue')
 plt.show()
-# print(prediction)
 
-
-# print(x_test)
 # WIKI/AMZN   - Amazon
 # WIKI/AAPL   - Apple
 # WIKI/DELL   - Dell
@@ -65,5 +63,5 @@ plt.show()
 # WIKI/CBS    - CBS
 # WIKI/F      - Ford
 # WIKI/FB     -Facebook
-# WIKI/MCD     - Mc Donalds
-#WIKI/AVP     - Avon
+# WIKI/MCD    - Mc Donalds
+# WIKI/AVP    - Avon
