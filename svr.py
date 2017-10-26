@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import quandl
 from sklearn import preprocessing, cross_validation, svm
-
+plt.style.use("ggplot")
 # variaveis de controle
 
 janela_media = 10
@@ -27,10 +27,11 @@ df_google["media_10"] = df_google["Adj. Close"].rolling(window=janela_media).mea
 
 df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume"]]
 
-forecast_out = 15  # int(math.ceil(0.001*len(df_google)))
+forecast_out = 40  # int(math.ceil(0.001*len(df_google)))
 df_google = df_google[janela_media:]
 predict=[]
 accuracySVM =[]
+real=[]
 for i in range(forecast_out):
     df_google["label"] = df_google[forecast_col].shift(-1)
 
@@ -51,10 +52,13 @@ for i in range(forecast_out):
     clf_svr.fit(Valor_treino, Resposta_treino)
 
     accuracySVM.append(clf_svr.score(Valor_teste, Resposta_teste))
-    predict.append(clf_svr.predict(Valor_teste))
+    predict.append(clf_svr.predict(Valor_teste)[0])
+    real.append(Resposta_teste[0])
 
 # accuracyNN = clf_neuralnet.predict(Valor_teste)
-print(accuracySVM)
+print(accuracySVM, predict, sep="\n")
+plt.plot(predict,'red',real,'blue')
+plt.show()
 #print(df_google.tail())
 forecast_out = 0
 # plt.plot([i for i in range(forecast_out)], predict[-forecast_out:], 'red',
