@@ -9,7 +9,7 @@ janela_media = 10
 forecast_col = "Adj. Close"
 
 valor_grafico = 50
-df_google = quandl.get("WIKI/GOOGL", start_date="20090101")
+df_google = quandl.get("WIKI/GOOGL", start_date="20140101",end_date="20160101")
 
 # df_google = pd.DataFrame(np.load("/home/alexandre/Documents/file.npy"))
 
@@ -20,14 +20,20 @@ df_google["Pert_Low"] = (df_google["Adj. Close"] - df_google["Adj. Open"]) / df_
 df_google["media_10"] = df_google["Adj. Close"].rolling(window=janela_media).mean()
 # df_google.drop(df_google.index[range(janela_media)])
 
+
+
+
+
+
 df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume"]]
 
-forecast_out = 40  # int(math.ceil(0.001*len(df_google)))
+forecast_out = 2  # int(math.ceil(0.001*len(df_google)))
 
-df_google["label"] = df_google[forecast_col].shift(forecast_out)
+df_google["label"] = df_google[forecast_col].shift(-forecast_out)
 
 df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume", "label"]]
-df_google = df_google[forecast_out if forecast_out > janela_media else janela_media:]
+df_google = df_google[:-forecast_out]
+df_google = df_google[janela_media:]
 # df_google.fillna(-99999, inplace=True)
 # df_google.dropna(inplace=True)
 
@@ -43,17 +49,19 @@ Valor_treino, Valor_teste, Resposta_treino, Resposta_teste = cross_validation.tr
 
 clf_svr = svm.SVR(kernel="linear")
 clf_svr.fit(Valor_treino, Resposta_treino)
-
+forecast_out = 0
 
 # print(clf_neuralnet.score(, np.array([1007.87])))
-accuracySVM = clf_svr.score(Valor_teste[-forecast_out:], Resposta_teste[-forecast_out:])
-predict = clf_svr.predict(Valor_teste[-forecast_out:])
+accuracySVM = clf_svr.score(Valor_teste, Resposta_teste)
+predict = clf_svr.predict(Valor_teste)
 # accuracyNN = clf_neuralnet.predict(Valor_teste)
-print(predict, accuracySVM, Resposta_teste[-forecast_out:], sep='\n')
-print(df_google.tail())
-forecast_out = 40
-plt.plot([i for i in range(forecast_out)], predict[-forecast_out:], 'red',
-         [j for j in range(forecast_out)], Resposta_teste[-forecast_out:], 'blue')
+print(accuracySVM)
+#print(df_google.tail())
+forecast_out = 0
+# plt.plot([i for i in range(forecast_out)], predict[-forecast_out:], 'red',
+#          [j for j in range(forecast_out)], Resposta_teste[-forecast_out:], 'blue')
+plt.plot([i for i in predict], 'red',
+         [j for j in Resposta_teste], 'blue')
 plt.show()
 
 # WIKI/AMZN   - Amazon
