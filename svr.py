@@ -27,42 +27,41 @@ df_google["media_10"] = df_google["Adj. Close"].rolling(window=janela_media).mea
 
 df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume"]]
 
-forecast_out = 2  # int(math.ceil(0.001*len(df_google)))
-
-df_google["label"] = df_google[forecast_col].shift(-forecast_out)
-
-df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume", "label"]]
-df_google = df_google[:-forecast_out]
+forecast_out = 15  # int(math.ceil(0.001*len(df_google)))
 df_google = df_google[janela_media:]
-# df_google.fillna(-99999, inplace=True)
-# df_google.dropna(inplace=True)
+predict=[]
+accuracySVM =[]
+for i in range(forecast_out):
+    df_google["label"] = df_google[forecast_col].shift(-1)
 
-X = np.array(df_google.drop(["label"], 1))
-X_A = preprocessing.scale(X)
+    df_google = df_google[["Adj. Close", "Perc_High", "Pert_Low", "media_10", "Adj. Volume", "label"]]
+    df_google = df_google[:-1]
 
-y = np.array(df_google["label"])
+    # df_google.fillna(-99999, inplace=True)
+    # df_google.dropna(inplace=True)
 
-Valor_treino, Valor_teste, Resposta_treino, Resposta_teste = cross_validation.train_test_split(X_A, y, test_size=0.2)
-# tamanho_teste = math.ceil(0.2*len(X_A))
-# Valor_treino, Valor_teste = X_A[:-tamanho_teste], X_A[-tamanho_teste:]
-# Resposta_treino, Resposta_teste = y[:-tamanho_teste], y[:-tamanho_teste]
+    X = np.array(df_google.drop(["label"], 1))
+    X_A = preprocessing.scale(X)
 
-clf_svr = svm.SVR(kernel="linear")
-clf_svr.fit(Valor_treino, Resposta_treino)
-forecast_out = 0
+    y = np.array(df_google["label"])
 
-# print(clf_neuralnet.score(, np.array([1007.87])))
-accuracySVM = clf_svr.score(Valor_teste, Resposta_teste)
-predict = clf_svr.predict(Valor_teste)
+    Valor_treino, Valor_teste, Resposta_treino, Resposta_teste = cross_validation.train_test_split(X_A, y, test_size=0.2)
+
+    clf_svr = svm.SVR(kernel="linear")
+    clf_svr.fit(Valor_treino, Resposta_treino)
+
+    accuracySVM.append(clf_svr.score(Valor_teste, Resposta_teste))
+    predict.append(clf_svr.predict(Valor_teste))
+
 # accuracyNN = clf_neuralnet.predict(Valor_teste)
 print(accuracySVM)
 #print(df_google.tail())
 forecast_out = 0
 # plt.plot([i for i in range(forecast_out)], predict[-forecast_out:], 'red',
 #          [j for j in range(forecast_out)], Resposta_teste[-forecast_out:], 'blue')
-plt.plot([i for i in predict], 'red',
-         [j for j in Resposta_teste], 'blue')
-plt.show()
+# plt.plot([i for i in predict], 'red',
+#          [j for j in Resposta_teste], 'blue')
+# plt.show()
 
 # WIKI/AMZN   - Amazon
 # WIKI/AAPL   - Apple
